@@ -24,7 +24,7 @@ func TestCreateExpenseHandler(t *testing.T) {
 
 		e.ID = 12
 		db := &util.MockDB{LastInsertId: 12, RowsAffected: 1}
-		handler := ExpenseHandler{DB: db}
+		handler := Handler{DB: db}
 
 		handler.CreateExpensesHandler(res.Context)
 		var ee Expense
@@ -38,7 +38,7 @@ func TestCreateExpenseHandler(t *testing.T) {
 	t.Run("should return 400 (BadRequest) when request body is invalid", func(t *testing.T) {
 		res := util.RequestE(http.MethodPost, "/expenses", strings.NewReader("invalid body"))
 		db := &util.MockDB{LastInsertId: 12, RowsAffected: 1}
-		handler := ExpenseHandler{DB: db}
+		handler := Handler{DB: db}
 
 		handler.CreateExpensesHandler(res.Context)
 		var e util.Error
@@ -60,7 +60,7 @@ func TestCreateExpenseHandler(t *testing.T) {
 
 		row := &util.MockRowError{MockRow: util.MockRow{LastInsertId: 0, RowsAffected: 0}}
 		db := &util.MockDB{LastInsertId: 0, RowsAffected: 0, Row: row}
-		handler := ExpenseHandler{DB: db}
+		handler := Handler{DB: db}
 
 		handler.CreateExpensesHandler(res.Context)
 		var err util.Error

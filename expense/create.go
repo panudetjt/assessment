@@ -8,7 +8,7 @@ import (
 	"github.com/panudetjt/assessment/util"
 )
 
-func (h *ExpenseHandler) CreateExpensesHandler(c echo.Context) error {
+func (h *Handler) CreateExpensesHandler(c echo.Context) error {
 	var e Expense
 	err := c.Bind(&e)
 	if err != nil {
