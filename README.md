@@ -181,3 +181,11 @@
 * แต่ละ story ควรใช้ branch ของตัวเองแล้ว merge กลับไปที่ main ด้วย 3-way merge
 ![ตัวอย่าง](three-way-merge.png)
 
+
+## Test
+
+### Integration
+
+```console
+docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from integration
+```

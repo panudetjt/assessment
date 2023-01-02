@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      - DATABASE_URL=postgres://root:root@db:5432/integration?sslmode=disable
+      - PORT=:2565
+    depends_on:
+      - db
+    networks:
+      - integration
+  integration:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.test
+    environment:
+      - HOST=http://server:2565
+    volumes:
+      - $PWD:/go/src/target
+    depends_on:
+      - db
+      - server
+    networks:
+      - integration
+  db:
+    image: postgres:12.12
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: integration
+    restart: on-failure
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d/
+    networks:
+      - integration
+
+networks:
+  integration:
