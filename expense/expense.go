@@ -1,6 +1,8 @@
 package expense
 
-import "github.com/panudetjt/assessment/util"
+import (
+	"database/sql"
+)
 
 type Expense struct {
 	ID     int      `json:"id"`
@@ -10,6 +12,6 @@ type Expense struct {
 	Tags   []string `json:"tags"`
 }
 
-type ExpenseHandler struct {
-	DB util.IDB
+type Handler struct {
+	DB *sql.DB
 }
