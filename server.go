@@ -27,9 +27,10 @@ func main() {
 
 	e.GET("/health", health.HealthHandler)
 
-	eh := &expense.ExpenseHandler{DB: db}
+	eh := &expense.Handler{DB: db}
 
 	e.POST("/expenses", eh.CreateExpensesHandler)
+	e.GET("/expenses/:id", eh.GetExpenseByIdHandler)
 
 	go func() {
 		e.Logger.Info("Server started at ", port)

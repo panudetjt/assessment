@@ -4,6 +4,7 @@ package expense
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -25,6 +26,21 @@ func TestCreateExpense(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusCreated, res.StatusCode)
 	assert.NotEqual(t, 0, e.ID)
+	assert.Equal(t, "strawberry smoothie", e.Title)
+	assert.Equal(t, 79, e.Amount)
+	assert.Equal(t, "night market promotion discount 10 bath", e.Note)
+	assert.Equal(t, []string{"food", "beverage"}, e.Tags)
+}
+
+func TestGetById(t *testing.T) {
+	e := seedExpense(t)
+	var got Expense
+	res := util.Request(http.MethodGet, util.Uri("expenses/"+fmt.Sprint(e.ID)), nil)
+	err := res.Decode(&got)
+
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+	assert.Equal(t, e.ID, got.ID)
 	assert.Equal(t, "strawberry smoothie", e.Title)
 	assert.Equal(t, 79, e.Amount)
 	assert.Equal(t, "night market promotion discount 10 bath", e.Note)
