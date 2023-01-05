@@ -43,10 +43,10 @@ func TestGetById(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 	assert.Equal(t, e.ID, got.ID)
-	assert.Equal(t, "strawberry smoothie", e.Title)
-	assert.Equal(t, 79, e.Amount)
-	assert.Equal(t, "night market promotion discount 10 bath", e.Note)
-	assert.Equal(t, []string{"food", "beverage"}, e.Tags)
+	assert.Equal(t, "strawberry smoothie", got.Title)
+	assert.Equal(t, 79, got.Amount)
+	assert.Equal(t, "night market promotion discount 10 bath", got.Note)
+	assert.Equal(t, []string{"food", "beverage"}, got.Tags)
 }
 
 func TestUpdate(t *testing.T) {
