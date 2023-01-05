@@ -31,6 +31,7 @@ func main() {
 
 	e.POST("/expenses", eh.CreateExpensesHandler)
 	e.GET("/expenses/:id", eh.GetExpenseByIdHandler)
+	e.PUT("/expenses/:id", eh.UpdateExpensesHandler)
 
 	go func() {
 		e.Logger.Info("Server started at ", port)
