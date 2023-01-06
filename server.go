@@ -18,7 +18,10 @@ import (
 func main() {
 	port := os.Getenv("PORT")
 
-	db := expense.InitDB()
+	db, err := expense.InitDB("postgres")
+	if err != nil {
+		panic(err)
+	}
 
 	e := echo.New()
 

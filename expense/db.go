@@ -2,20 +2,19 @@ package expense
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
 	"os"
 
 	_ "github.com/lib/pq"
 )
 
-func InitDB() *sql.DB {
+func InitDB(driver string) (*sql.DB, error) {
 	url := os.Getenv("DATABASE_URL")
 
-	var err error
-	db, err := sql.Open("postgres", url)
+	db, err := sql.Open(driver, url)
 	if err != nil {
-		log.Fatal("Connect to database error", err)
+		return nil, fmt.Errorf("connect to database error: %s", err)
 	}
 
-	return db
+	return db, nil
 }
