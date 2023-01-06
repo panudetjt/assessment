@@ -49,6 +49,18 @@ func TestGetById(t *testing.T) {
 	assert.Equal(t, []string{"food", "beverage"}, got.Tags)
 }
 
+func TestAll(t *testing.T) {
+	e := seedExpense(t)
+	var got []Expense
+	res := util.Request(http.MethodGet, util.Uri("expenses"), nil)
+	err := res.Decode(&got)
+
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+	assert.GreaterOrEqual(t, len(got), 1)
+	assert.Contains(t, got, e)
+}
+
 func TestUpdate(t *testing.T) {
 	e := seedExpense(t)
 	b, _ := json.Marshal(Expense{
