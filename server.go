@@ -29,6 +29,7 @@ func main() {
 
 	eh := &expense.Handler{DB: db}
 
+	e.GET("/expenses", eh.GetAllExpenseHandler)
 	e.POST("/expenses", eh.CreateExpensesHandler)
 	e.GET("/expenses/:id", eh.GetExpenseByIdHandler)
 	e.PUT("/expenses/:id", eh.UpdateExpensesHandler)
