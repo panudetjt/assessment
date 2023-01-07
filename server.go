@@ -13,6 +13,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/panudetjt/assessment/expense"
 	"github.com/panudetjt/assessment/health"
+	m "github.com/panudetjt/assessment/middleware"
 )
 
 func main() {
@@ -32,7 +33,9 @@ func main() {
 
 	eh := &expense.Handler{DB: db}
 
-	e.GET("/expenses", eh.GetAllExpenseHandler)
+	e.GET("/expenses", eh.GetAllExpenseHandler, m.Authorization(func(s string, ctx echo.Context) (bool, error) {
+		return s == "November 10, 2009", nil
+	}))
 	e.POST("/expenses", eh.CreateExpensesHandler)
 	e.GET("/expenses/:id", eh.GetExpenseByIdHandler)
 	e.PUT("/expenses/:id", eh.UpdateExpensesHandler)
