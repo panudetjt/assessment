@@ -18,6 +18,7 @@ services:
       dockerfile: ./Dockerfile.test
     environment:
       - HOST=http://server:2565
+      - AUTH_TOKEN=November 10, 2009
     volumes:
       - $PWD:/go/src/target
     depends_on:

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
@@ -51,14 +52,27 @@ func TestGetById(t *testing.T) {
 
 func TestAll(t *testing.T) {
 	e := seedExpense(t)
-	var got []Expense
-	res := util.Request(http.MethodGet, util.Uri("expenses"), nil)
-	err := res.Decode(&got)
 
-	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, res.StatusCode)
-	assert.GreaterOrEqual(t, len(got), 1)
-	assert.Contains(t, got, e)
+	t.Run("return 401 (Unauthorized) when Authorization key is invalid ", func(t *testing.T) {
+		at := os.Getenv("AUTH_TOKEN")
+		os.Setenv("AUTH_TOKEN", "invalid")
+
+		res := util.Request(http.MethodGet, util.Uri("expenses"), nil)
+		assert.Equal(t, http.StatusUnauthorized, res.StatusCode)
+
+		// restore
+		os.Setenv("AUTH_TOKEN", at)
+	})
+	t.Run("return all expenses", func(t *testing.T) {
+		var got []Expense
+		res := util.Request(http.MethodGet, util.Uri("expenses"), nil)
+		err := res.Decode(&got)
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		assert.GreaterOrEqual(t, len(got), 1)
+		assert.Contains(t, got, e)
+	})
 }
 
 func TestUpdate(t *testing.T) {
