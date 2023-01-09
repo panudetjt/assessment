@@ -3,6 +3,7 @@ package expense
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -23,21 +24,13 @@ func TestUpdateExpenseHandler(t *testing.T) {
 			Tags:   []string{"beverage"},
 		}
 		b, _ := json.Marshal(e)
-		res := util.RequestE(http.MethodPut, "/expenses/1", strings.NewReader(string(b)))
-		res.Context.SetPath("/expenses/:id")
-		res.Context.SetParamNames("id")
-		res.Context.SetParamValues("1")
-		mockRows := sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"}).
-			AddRow("1", "test-title", "123", "test-note", pq.Array([]string{"test-tags"}))
-		db, mock, _ := sqlmock.New()
-		mock.ExpectPrepare("SELECT id, title, amount, note, tags FROM expenses WHERE id = ?").
+		res, db, mock := arrange(string(b))
+
+		mock.ExpectPrepare("UPDATE expenses SET title = \\$2, amount = \\$3, note = \\$4, tags = \\$5 WHERE id = \\$1 RETURNING id, title, amount, note, tags").
 			ExpectQuery().
-			WithArgs("1").
-			WillReturnRows(mockRows)
-		mock.ExpectPrepare("UPDATE expenses SET title = \\$2, amount = \\$3, note = \\$4, tags = \\$5 WHERE id = \\$1").
-			ExpectExec().
 			WithArgs(e.ID, e.Title, e.Amount, e.Note, pq.Array(e.Tags)).
-			WillReturnResult(sqlmock.NewResult(1, 1))
+			WillReturnRows(sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"}).
+				AddRow("1", e.Title, fmt.Sprint(e.Amount), e.Note, pq.Array(e.Tags)))
 		handler := Handler{DB: db}
 
 		handler.UpdateExpensesHandler(res.Context)
@@ -49,14 +42,25 @@ func TestUpdateExpenseHandler(t *testing.T) {
 		assert.Nil(t, mock.ExpectationsWereMet())
 		assert.Equal(t, e, ee)
 	})
+	t.Run("should return 400 (BadRequest) when request id invalid", func(t *testing.T) {
+		res := util.RequestE(http.MethodPut, "/expenses/invalid", nil)
+		res.Context.SetPath("/expenses/:id")
+		res.Context.SetParamNames("id")
+		res.Context.SetParamValues("invalid")
+		db, mock, _ := sqlmock.New()
+
+		handler := Handler{DB: db}
+		handler.UpdateExpensesHandler(res.Context)
+		ee := util.Error{}
+		res.Decode(&ee)
+
+		assert.Equal(t, "invalid", res.Context.Param("id"))
+		assert.Equal(t, http.StatusBadRequest, res.Recorder.Code)
+		assert.Nil(t, mock.ExpectationsWereMet())
+		assert.NotNil(t, ee.Message)
+	})
 	t.Run("should return 400 (BadRequest) when request body is invalid", func(t *testing.T) {
 		res, db, mock := arrange("invalid body")
-		mockRows := sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"}).
-			AddRow("1", "test-title", "123", "test-note", pq.Array([]string{"test-tags"}))
-		mock.ExpectPrepare("SELECT id, title, amount, note, tags FROM expenses WHERE id = ?").
-			ExpectQuery().
-			WithArgs("1").
-			WillReturnRows(mockRows)
 
 		handler := Handler{DB: db}
 		handler.UpdateExpensesHandler(res.Context)
@@ -70,7 +74,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 	})
 	t.Run("should return 404 (NotFound) when not found row", func(t *testing.T) {
 		res, db, mock := arrange("")
-		mock.ExpectPrepare("SELECT id, title, amount, note, tags FROM expenses WHERE id = ?").
+		mock.ExpectPrepare("UPDATE expenses SET title = \\$2, amount = \\$3, note = \\$4, tags = \\$5 WHERE id = \\$1 RETURNING id, title, amount, note, tags").
 			ExpectQuery().
 			WillReturnError(sql.ErrNoRows)
 
@@ -84,45 +88,10 @@ func TestUpdateExpenseHandler(t *testing.T) {
 		assert.Nil(t, mock.ExpectationsWereMet())
 		assert.NotNil(t, ee.Message)
 	})
-	t.Run("should return 500 (InternalServerError) when cannot prepare SELECT", func(t *testing.T) {
-		res, db, mock := arrange("")
-		mock.ExpectPrepare("SELECT id, title, amount, note, tags FROM expenses WHERE id = ?").WillReturnError(&pq.Error{})
-
-		handler := Handler{DB: db}
-		handler.UpdateExpensesHandler(res.Context)
-		ee := util.Error{}
-		res.Decode(&ee)
-
-		assert.Equal(t, "1", res.Context.Param("id"))
-		assert.Equal(t, http.StatusInternalServerError, res.Recorder.Code)
-		assert.Nil(t, mock.ExpectationsWereMet())
-		assert.NotNil(t, ee.Message)
-	})
-	t.Run("should return 500 (InternalServerError) when cannot execute SELECT", func(t *testing.T) {
-		res, db, mock := arrange("")
-		mock.ExpectPrepare("SELECT id, title, amount, note, tags FROM expenses WHERE id = ?").
-			ExpectQuery().
-			WillReturnError(&pq.Error{})
-
-		handler := Handler{DB: db}
-		handler.UpdateExpensesHandler(res.Context)
-		ee := util.Error{}
-		res.Decode(&ee)
-
-		assert.Equal(t, "1", res.Context.Param("id"))
-		assert.Equal(t, http.StatusInternalServerError, res.Recorder.Code)
-		assert.Nil(t, mock.ExpectationsWereMet())
-		assert.NotNil(t, ee.Message)
-	})
 	t.Run("should return 500 (InternalServerError) when cannot prepare update", func(t *testing.T) {
 		res, db, mock := arrange("")
-		mockRows := sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"}).
-			AddRow("1", "test-title", "123", "test-note", pq.Array([]string{"test-tags"}))
-		mock.ExpectPrepare("SELECT id, title, amount, note, tags FROM expenses WHERE id = ?").
-			ExpectQuery().
-			WithArgs("1").
-			WillReturnRows(mockRows)
-		mock.ExpectPrepare("UPDATE expenses SET title = \\$2, amount = \\$3, note = \\$4, tags = \\$5 WHERE id = \\$1").WillReturnError(&pq.Error{})
+		mock.ExpectPrepare("UPDATE expenses SET title = \\$2, amount = \\$3, note = \\$4, tags = \\$5 WHERE id = \\$1 RETURNING id, title, amount, note, tags").
+			WillReturnError(&pq.Error{})
 
 		handler := Handler{DB: db}
 		handler.UpdateExpensesHandler(res.Context)
@@ -136,14 +105,8 @@ func TestUpdateExpenseHandler(t *testing.T) {
 	})
 	t.Run("should return 500 (InternalServerError) when cannot execute update", func(t *testing.T) {
 		res, db, mock := arrange("")
-		mockRows := sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"}).
-			AddRow("1", "test-title", "123", "test-note", pq.Array([]string{"test-tags"}))
-		mock.ExpectPrepare("SELECT id, title, amount, note, tags FROM expenses WHERE id = ?").
+		mock.ExpectPrepare("UPDATE expenses SET title = \\$2, amount = \\$3, note = \\$4, tags = \\$5 WHERE id = \\$1 RETURNING id, title, amount, note, tags").
 			ExpectQuery().
-			WithArgs("1").
-			WillReturnRows(mockRows)
-		mock.ExpectPrepare("UPDATE expenses SET title = \\$2, amount = \\$3, note = \\$4, tags = \\$5 WHERE id = \\$1").
-			ExpectExec().
 			WillReturnError(&pq.Error{})
 
 		handler := Handler{DB: db}
